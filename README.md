@@ -1,4 +1,4 @@
-# SLAM-Clean-Robot-Path-Coverage
+# SLAM-Clean-Robot-Path-Coverage in ROS
 # Summer Holiday in BIT for Clean Robot
 
 
