@@ -23,3 +23,4 @@
 
 （8）If you want to run this program on your devices. You need to install some dependences. 
 
+![two bears](https://github.com/hjr553199215/SLAM-Clean-Robot-Path-Coverage/blob/master/path_29.png)
