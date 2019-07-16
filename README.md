@@ -26,3 +26,7 @@
 I show the results of this program as follows:
 
 ![two bears](https://github.com/hjr553199215/SLAM-Clean-Robot-Path-Coverage/blob/master/path_29.png)
+
+![two bears](https://github.com/hjr553199215/SLAM-Clean-Robot-Path-Coverage/blob/master/path_coverage.png)
+
+If you find some disadvantages about this program, or you have a better idea to achieve the coverage and improve this program, welcome to discuss!
