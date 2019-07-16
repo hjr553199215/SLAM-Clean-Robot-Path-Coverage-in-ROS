@@ -1,0 +1,13 @@
+<launch>
+
+  <include file="$(find rbx1_bringup)/launch/fake_turtlebot.launch" />
+
+  <include file="$(find rbx1_nav)/launch/fake_amcl.launch"/>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find path_coverage)/cleaning.rviz"/>
+
+  <node pkg="path_coverage" type="path_planning_node" respawn="false" name="path_planning_node" output="screen" clear_params="true">
+    <rosparam file="$(find path_coverage)/config/costmap_common_params.yaml" command="load" ns="cleaning_costmap" />
+    <rosparam file="$(find path_coverage)/config/cleaning_costmap_params.yaml" command="load" />
+  </node>
+</launch>
