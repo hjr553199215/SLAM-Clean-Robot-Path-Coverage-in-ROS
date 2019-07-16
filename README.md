@@ -16,3 +16,10 @@
      b.In this algorithm, a lot of turns were produced, that will cost a lot of energy for our agents.
 
 （5）parameters adjustment
+
+（6）For solving the self-locking problem , I add a new method in the original algorithm. A* algorithm(point-to-point path plan) is adopted for this problem.
+
+（7）Reducing the number of turns. Change the scoring mechanism.
+
+（8）If you want to run this program on your devices. You need to install some dependences. 
+
