@@ -33,4 +33,12 @@ After adjusting the algorithm, the number of turns has been reduced substantiall
 
 Following is the result of reducing turns:
 
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 If you find some disadvantages about this program, or you have a better idea to achieve the coverage and improve this program, welcome to discuss!
+
+By the way:
+
+For realizing the path-coverage algorithm, we have to align the frame between map and the real world. In the next, I will describe some special "origins" in the map frame.
+
+
