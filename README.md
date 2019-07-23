@@ -29,4 +29,8 @@ I show the results of this program as follows:
 
 ![two bears](https://github.com/hjr553199215/SLAM-Clean-Robot-Path-Coverage/blob/master/path_coverage.png)
 
+After adjusting the algorithm, the number of turns has been reduced substantially. But the path on oblique section is not ideal. This phenomenon may be caused by the meshing of our map.
+
+Following is the result of reducing turns:
+
 If you find some disadvantages about this program, or you have a better idea to achieve the coverage and improve this program, welcome to discuss!
