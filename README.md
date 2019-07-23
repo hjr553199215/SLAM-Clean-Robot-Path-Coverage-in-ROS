@@ -43,5 +43,8 @@ For realizing the path-coverage algorithm, we have to align the frame between ma
 
 ![two_bears](https://github.com/hjr553199215/SLAM-Clean-Robot-Path-Coverage-in-ROS/blob/master/path_origin.png)
 
+In the above map, the bottom-left corner is the origin (0,0) of map frame, the top-left corner is the origin of Mat in  CV, the "col" and "row" of the top-left corner are both 0.
+
+In the config files, we need to adjust two key parameters---size of cell, resolution. Size of cell determines the size of meshing for the map. For example, size of cell = 21, it means the size of a meshing cell is 21x21(pixel).  The resolution represents the size of a pixel. For example, resolution = 0.5, it means the size of a pixel is 0.5x0.5. We need to notice that "0.5" has the same scale with map frame.
 
 
