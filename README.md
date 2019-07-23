@@ -41,4 +41,7 @@ By the way:
 
 For realizing the path-coverage algorithm, we have to align the frame between map and the real world. In the next, I will describe some special "origins" in the map frame.
 
+![two_bears](https://github.com/hjr553199215/SLAM-Clean-Robot-Path-Coverage-in-ROS/blob/master/path_origin.png)
+
+
 
