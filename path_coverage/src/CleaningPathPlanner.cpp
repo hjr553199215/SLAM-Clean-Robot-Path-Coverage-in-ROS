@@ -4,6 +4,10 @@
 CleaningPathPlanning::CleaningPathPlanning(costmap_2d::Costmap2DROS *costmap2d_ros)
 {
     //temp solution.
+    //costmap_2D提供的ROS化功能接口主要就是 costmap_2d::Costmap2DROS，它使用 costmap_2d::LayeredCostmap 来跟踪每一层。
+    //每一层在 Costmap2DROS中以 插件方式被实例化，并被添加到 LayeredCostmap。 
+    //每一层可以独立编译，且可使用C++接口实现对代价地图的随意修改，即LayerdCostmap为Costmap2DROS（用户接口）提供了加载地图层的插件机制，每个插件（即地图层）都是Layer类型的。 
+    //costmap_2d::Costmap2D 类中实现了用来存储和访问2D代价地图的的基本数据结构。
     costmap2d_ros_ = costmap2d_ros;
     //costmap2d_ros_->updateMap();
     costmap2d_ = costmap2d_ros->getCostmap();
@@ -11,8 +15,8 @@ CleaningPathPlanning::CleaningPathPlanning(costmap_2d::Costmap2DROS *costmap2d_r
 
 
     ros::NodeHandle private_nh("~/cleaning_plan_nodehandle");
-    plan_pub_ = private_nh.advertise<nav_msgs::Path>("cleaning_path", 1);
-    grid_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("covered_grid",1);
+    plan_pub_ = private_nh.advertise<nav_msgs::Path>("cleaning_path", 1);//把路径公开
+    grid_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("covered_grid",1);//占用栅格地图打开
 
 
     string sizeOfCellString,coveredValueStr;
@@ -31,7 +35,7 @@ CleaningPathPlanning::CleaningPathPlanning(costmap_2d::Costmap2DROS *costmap2d_r
     cout<<"The size of map is "<<sizex<<"  "<<sizey<<endl;
     resolution_ = costmap2d_->getResolution();//分辨率
 
-    srcMap_=Mat(sizey,sizex,CV_8U);
+    srcMap_=Mat(sizey,sizex,CV_8U);//映射成图片
     for(int r = 0; r < sizey; r++){
       for(int c = 0; c < sizex; c++ ){
           srcMap_.at<uchar>(r,c) = costmap2d_->getCost(c,sizey-r-1);//??sizey-r-1 caution: costmap's origin is at left bottom ,while opencv's pic's origin is at left-top.
@@ -40,7 +44,7 @@ CleaningPathPlanning::CleaningPathPlanning(costmap_2d::Costmap2DROS *costmap2d_r
     }
 
        initializeMats(); 
-       initializeCoveredGrid();
+       initializeCoveredGrid();//赋值到栅格地图中
 
     //imshow("debugMapImage",srcMap_);
     //imshow("debugCellMatImage",cellMat_);
@@ -54,18 +58,18 @@ CleaningPathPlanning::CleaningPathPlanning(costmap_2d::Costmap2DROS *costmap2d_r
 vector<geometry_msgs::PoseStamped> CleaningPathPlanning::GetPathInROS()
 {
 //    vector<geometry_msgs::PoseStamped> resultVec;
-    if(!pathVecInROS_.empty()) pathVecInROS_.clear();//清空操作
+    if(!pathVecInROS_.empty()) pathVecInROS_.clear();//清空操作,用于存放机器人期望运动轨迹
     geometry_msgs::PoseStamped posestamped;
     geometry_msgs::Pose pose;
     vector<cellIndex> cellvec;
-    cellvec = GetPathInCV();
+    cellvec = GetPathInCV();//获取图像中需要的路径
     /*trasnsform*/
     vector<cellIndex>::iterator iter;//cellIndex里面存放的是行，列以及角度信息。
     int sizey = cellMat_.rows;
 
     for(iter=cellvec.begin(); iter!=cellvec.end();iter++)
     {
-         costmap2d_->mapToWorld((*iter).col * SIZE_OF_CELL + SIZE_OF_CELL/2 , (sizey-(*iter).row-1)*SIZE_OF_CELL + SIZE_OF_CELL/2, pose.position.x, pose.position.y);
+         costmap2d_->mapToWorld((*iter).col * SIZE_OF_CELL + SIZE_OF_CELL/2 , (sizey-(*iter).row-1)*SIZE_OF_CELL + SIZE_OF_CELL/2, pose.position.x, pose.position.y);//worldToMap将world坐标点映射到map
          pose.orientation.w = cos((*iter).theta * PI / 180 / 2); //(sizey-(*iter).row-1)
          pose.orientation.x = 0;
          pose.orientation.y = 0;
@@ -76,7 +80,7 @@ vector<geometry_msgs::PoseStamped> CleaningPathPlanning::GetPathInROS()
 
          pathVecInROS_.push_back(posestamped);
     }
-    publishPlan(pathVecInROS_);
+    publishPlan(pathVecInROS_);//发布路径信息
     cout<<"The path size is "<<pathVecInROS_.size()<<endl;
     return pathVecInROS_;
 }
@@ -136,8 +140,8 @@ vector<geometry_msgs::PoseStamped> CleaningPathPlanning::GetBorderTrackingPathIn
 }
 
 
-//First make border path planning in original resolution using opencv tools.Then transform the result
-//in ROS format and take the robot's shape into account.
+//首先使用opencv工具在原分辨率下进行边界路径规划。然后转换结果
+//采用ROS格式，并考虑机器人的形状。
 void CleaningPathPlanning::GetBorderTrackingPathInCV(vector<cv::Point2i> &resultVec)
 {
     std::vector<cv::Point2i> borderPointsIndexVec;//todo:make point2i corrresponding to cellindex.
@@ -235,7 +239,7 @@ void CleaningPathPlanning::PublishGrid()
     grid_pub_.publish(covered_path_grid_);
 }
 
-vector<cellIndex> CleaningPathPlanning::GetPathInCV()
+vector<cellIndex> CleaningPathPlanning::GetPathInCV()//在地图中获取路径
 {
     mainPlanningLoop();
     return this->pathVec_;
@@ -276,12 +280,12 @@ bool CleaningPathPlanning::cellContainsPoint(Point2i pt, cellIndex cell)
 
 bool CleaningPathPlanning::initializeMats()
 {
-    //initialize the member variables.
+    //初始化成员变量。
     if(srcMap_.empty())return false;
-    getCellMatAndFreeSpace(srcMap_,cellMat_,freeSpaceVec_);
+    getCellMatAndFreeSpace(srcMap_,cellMat_,freeSpaceVec_);//创建栅格地图，按照栅格大小来
 
-    neuralizedMat_ = Mat(cellMat_.rows,cellMat_.cols,CV_32F);
-    Astarmap = Mat(cellMat_.rows,cellMat_.cols,CV_32F);
+    neuralizedMat_ = Mat(cellMat_.rows,cellMat_.cols,CV_32F);//含有地图障碍物信息的costmap
+    Astarmap = Mat(cellMat_.rows,cellMat_.cols,CV_32F);//a*矩阵
     initializeNeuralMat(cellMat_,neuralizedMat_);
     Astarmap = neuralizedMat_;
     return true;
@@ -298,7 +302,7 @@ void CleaningPathPlanning::getCellMatAndFreeSpace(Mat srcImg, Mat &cellMat,vecto
     {
         for(c = 0 ; c<cellMat.cols; c++)
         {
-            isFree = true;
+            isFree = true;//是否存在障碍物
             for(i = 0; i<SIZE_OF_CELL; i++)
             {
                 for(j = 0; j < SIZE_OF_CELL; j++)
@@ -317,7 +321,7 @@ void CleaningPathPlanning::getCellMatAndFreeSpace(Mat srcImg, Mat &cellMat,vecto
                 ci.row = r;
                 ci.col = c;
                 ci.theta = 0;
-                freeSpaceVec.push_back(ci);
+                freeSpaceVec.push_back(ci);//存放所有空白的向量
                 cellMat.at<uchar>(r,c) = costmap_2d::FREE_SPACE;//0
             }
             else{cellMat.at<uchar>(r,c) = costmap_2d::LETHAL_OBSTACLE;}//254
@@ -384,7 +388,7 @@ void CleaningPathPlanning::writeResult(Mat resultmat,vector<cv::Point2i> pathVec
 
 void CleaningPathPlanning::mainPlanningLoop()
 {
-    cellIndex initPoint,nextPoint, currentPoint;
+    cellIndex initPoint,nextPoint, currentPoint;////cellIndex里面存放的是行，列以及角度信息。
     //    initPoint.row = cellMat_.rows/2; //initPoint to be made interface.
     //    initPoint.col = cellMat_.cols/2;
 
@@ -402,7 +406,7 @@ void CleaningPathPlanning::mainPlanningLoop()
     //geometry_msgs::PoseStamped current_position;
     //tf::poseStampedTFToMsg(global_pose, current_position);
 
-    bool getmapcoor = costmap2d_->worldToMap(wx,wy,mx,my);
+    bool getmapcoor = costmap2d_->worldToMap(wx,wy,mx,my);//全局地图映射到局部中
     if(!getmapcoor)
     {
         ROS_INFO("Failed to get robot location in map! Please check where goes wrong!");
@@ -449,29 +453,29 @@ void CleaningPathPlanning::mainPlanningLoop()
         
         //compute neiborhood's activities
         //hjr注：目前我认为这里进行的是有关方向上的抉择。
-        int maxIndex = 0;//目前尚不清楚这两个参数最后是干啥的。
-        float max_v = -300;
-        neuralizedMat_.at<float>(currentPoint.row ,currentPoint.col) = -250.0;
-	lasttheta = currentPoint.theta;
+        int maxIndex = 0;//参数索引，来获取当前最优方向
+        float max_v = -300;//用来判断是否路径可行
+        neuralizedMat_.at<float>(currentPoint.row ,currentPoint.col) = -250.0;//将mat中对应元素赋值，neuralizedMat_是使用initializeNeuralMat发布的地图，目前-250为走过的路径
+	    lasttheta = currentPoint.theta;
         for(int id = 0; id < 8; id++)
         {
-            deltaTheta = max(thetaVec[id],lasttheta)-min(thetaVec[id],lasttheta);
+            deltaTheta = max(thetaVec[id],lasttheta)-min(thetaVec[id],lasttheta);//8个方向判断，保证为正数
             if(deltaTheta>180) deltaTheta=360-deltaTheta;
-            e = 1 - abs(deltaTheta) / 180;//角度参数？
+            e = 1 - abs(deltaTheta) / 180;//计算参数，反向则速度设为0
             switch (id)
             {
                 case 0:
-                    if(currentPoint.col==neuralizedMat_.cols-1){v=-100000;break;}//处于边界？
+                    if(currentPoint.col==neuralizedMat_.cols-1){v=-100000;break;}//处于边界，及时停止向0度方向运动
                     v = neuralizedMat_.at<float>(currentPoint.row ,currentPoint.col+1) + c_0 * e;
 		    
                     break;
                 case 1:
-                if(currentPoint.col==neuralizedMat_.cols-1 || currentPoint.row == 0){v=-100000;break;}
+                if(currentPoint.col==neuralizedMat_.cols-1 || currentPoint.row == 0){v=-100000;break;}//处于边界，仍然往右上运动
                     v = neuralizedMat_.at<float>(currentPoint.row-1 ,currentPoint.col+1) + c_0 * e-200;
 
                     break;
                 case 2:
-                if(currentPoint.row == 0){v=-100000;break;}
+                if(currentPoint.row == 0){v=-100000;break;}//处于边界，仍然往上运动
                     v = neuralizedMat_.at<float>(currentPoint.row-1 ,currentPoint.col) + c_0 * e;
 
                     break;
@@ -503,7 +507,7 @@ void CleaningPathPlanning::mainPlanningLoop()
                 default:
                     break;
             }
-            if(v > max_v)
+            if(v > max_v)//判断是否可走，如果该位置方向已经走过则不会触发
             {
                 max_v = v;
                 maxIndex=id;
@@ -511,7 +515,7 @@ void CleaningPathPlanning::mainPlanningLoop()
             
            
             
-            if(v== max_v&&id>maxIndex)
+            if(v== max_v&&id>maxIndex)//更偏向id更大
 	    {
 	     max_v = v;
 	     maxIndex = id;
@@ -525,17 +529,17 @@ void CleaningPathPlanning::mainPlanningLoop()
             float dist = 0.0, min_dist = 100000000;
             //vector<cellIndex>::iterator min_iter;
             int ii=0, min_index=-1;
-            for(it=freeSpaceVec_.begin();it!=freeSpaceVec_.end();it++)
+            for(it=freeSpaceVec_.begin();it!=freeSpaceVec_.end();it++)//获取所有空白向量
             {
                 if(neuralizedMat_.at<float>((*it).row,(*it).col) > 0)
                 { 
-		  if(Boundingjudge((*it).row,(*it).col))//周围是否存在-250的点
+		  if(Boundingjudge((*it).row,(*it).col))//周围是否存在-250的点（八个方向上）
 		  {
                     dist = sqrt((currentPoint.row-(*it).row)*(currentPoint.row-(*it).row)+(currentPoint.col-(*it).col)*(currentPoint.col-(*it).col));
 		    if(dist < min_dist)
                     {
-                        min_dist = dist;
-                        min_index = ii;
+                        min_dist = dist;//选取最小的路径点
+                        min_index = ii;//对应的索引信息
                     }
 		  }
                 }
@@ -548,9 +552,9 @@ void CleaningPathPlanning::mainPlanningLoop()
              {
                 cout << "next point index: "<<min_index<< endl;
                 cout << "distance: "<<min_dist << endl;
-                nextPoint = freeSpaceVec_[min_index];
+                nextPoint = freeSpaceVec_[min_index];//拿出下一个点的位置
                 currentPoint = nextPoint;
-                pathVec_.push_back(nextPoint);
+                pathVec_.push_back(nextPoint);//保存路径
 
                 continue; 
              }
@@ -644,7 +648,7 @@ bool CleaningPathPlanning::findElement(vector<Point2i> pointsVec, Point2i pt, in
 
 bool CleaningPathPlanning::initializeCoveredGrid()//在这里我对CoverGrid的理解为覆盖栅格。
 {
-    boost::unique_lock<costmap_2d::Costmap2D::mutex_t> lock(*(costmap2d_->getMutex()));
+    boost::unique_lock<costmap_2d::Costmap2D::mutex_t> lock(*(costmap2d_->getMutex()));//costmap互斥锁
     double resolution = costmap2d_->getResolution();//分辨率
 
     covered_path_grid_.header.frame_id = "map";//covered_path_grid_是costmap库中的占据栅格地图消息。
@@ -655,7 +659,7 @@ bool CleaningPathPlanning::initializeCoveredGrid()//在这里我对CoverGrid的�
     covered_path_grid_.info.height = costmap2d_->getSizeInCellsY();
 
     double wx, wy;
-    costmap2d_->mapToWorld(0, 0, wx, wy);//从地图坐标系转换至世界坐标系。
+    costmap2d_->mapToWorld(0, 0, wx, wy);//从地图坐标系转换至世界坐标系，start_x, start_y，wx, wy
     covered_path_grid_.info.origin.position.x = wx - resolution / 2;
     covered_path_grid_.info.origin.position.y = wy - resolution / 2;
     covered_path_grid_.info.origin.position.z = 0.0;
