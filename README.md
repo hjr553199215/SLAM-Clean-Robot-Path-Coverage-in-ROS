@@ -47,4 +47,6 @@ In the above map, the bottom-left corner is the origin (0,0) of map frame, the t
 
 In the config files, we need to adjust two key parameters---size of cell, resolution. Size of cell determines the size of meshing for the map. For example, size of cell = 21, it means the size of a meshing cell is 21x21(pixel).  The resolution represents the size of a pixel. For example, resolution = 0.5, it means the size of a pixel is 0.5x0.5. We need to notice that "0.5" has the same scale with map frame.
 
+[其余相似代码可以参考](https://github.com/peterWon/CleaningRobot)
+
 
